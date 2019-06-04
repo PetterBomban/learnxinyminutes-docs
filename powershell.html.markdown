@@ -2,7 +2,8 @@
 category: tool
 tool: powershell
 contributors:
-    - ["Wouter Van Schandevijl", "https://github.com/laoujin"]
+		- ["Wouter Van Schandevijl", "https://github.com/laoujin"]
+		- ["Petter Bomban", "https://github.com/PetterBomban"]
 filename: LearnPowershell.ps1
 ---
 
@@ -53,31 +54,39 @@ Update-Help # Run as admin
 The tutorial starts here:
 
 ```powershell
-# As you already figured, comments start with #
+# Comments start with #
 
 # Simple hello world example:
-echo Hello world!
-# echo is an alias for Write-Output (=cmdlet)
-# Most cmdlets and functions follow the Verb-Noun naming convention
+Write-Output "Hello world!"
+# Write-Output is also aliased to "echo" and "write"
+# echo "Hello world!" would produce the same output
+
+# Cmdlets and functions should follow the Verb-Noun format for easier discoverability/usage
+Get-Verb
 
 # Each command starts on a new line, or after a semicolon:
-echo 'This is the first line'; echo 'This is the second line'
+Write-Output 'This is the first line'; Write-Output 'This is the second line'
 
-# Declaring a variable looks like this:
-$aString="Some string"
-# Or like this:
-$aNumber = 5 -as [double]
+# Declaring variables looks like this:
+$aString = "Some string"
 $aList = 1,2,3,4,5
 $anEmptyList = @()
 $aString = $aList -join '--' # yes, -split exists also
-$aHashtable = @{name1='val1'; name2='val2'}
+$aHashtable = @{
+	name1 = 'val1'
+	name2 = 'val2'
+}
+
+# You can specify the type of a variable in two ways:
+[double]$aDouble = 5 
+$aDouble = 5 -as [Double]
 
 # Using variables:
-echo $aString
-echo "Interpolation: $aString"
-echo "$aString has length of $($aString.Length)"
-echo '$aString'
-echo @"
+Write-Output $aString
+Write-Output "Interpolation: $aString"
+Write-Output "$aString has length of $($aString.Length)"
+Write-Output '$aString'
+Write-Output @"
 This is a Here-String
 $aString
 "@
@@ -86,18 +95,18 @@ $aString
 
 # Builtin variables:
 # There are some useful builtin variables, like
-echo "Booleans: $TRUE and $FALSE"
-echo "Empty value: $NULL"
-echo "Last program's return value: $?"
-echo "Exit code of last run Windows-based program: $LastExitCode"
-echo "The last token in the last line received by the session: $$"
-echo "The first token: $^"
-echo "Script's PID: $PID"
-echo "Full path of current script directory: $PSScriptRoot"
-echo 'Full path of current script: ' + $MyInvocation.MyCommand.Path
-echo "FUll path of current directory: $Pwd"
-echo "Bound arguments in a function, script or code block: $PSBoundParameters"
-echo "Unbound arguments: $($Args -join ', ')."
+Write-Output "Booleans: $True and $False"
+Write-Output "Empty value: $Null"
+Write-Output "Last program's return value: $?"
+Write-Output "Exit code of last run Windows-based program: $LastExitCode"
+Write-Output "The last token in the last line received by the session: $$"
+Write-Output "The first token: $^"
+Write-Output "Script's PID: $PID"
+Write-Output "Full path of current script directory: $PSScriptRoot"
+Write-Output 'Full path of current script: ' + $MyInvocation.MyCommand.Path
+Write-Output "FUll path of current directory: $Pwd"
+Write-Output "Bound arguments in a function, script or code block: $PSBoundParameters"
+Write-Output "Unbound arguments: $($Args -join ', ')."
 # More builtins: `help about_Automatic_Variables`
 
 # Inline another file (dot operator)
@@ -107,11 +116,13 @@ echo "Unbound arguments: $($Args -join ', ')."
 ### Control Flow
 # We have the usual if structure:
 if ($Age -is [string]) {
-	echo 'But.. $Age cannot be a string!'
-} elseif ($Age -lt 12 -and $Age -gt 0) {
-	echo 'Child (Less than 12. Greater than 0)'
-} else {
-	echo 'Adult'
+	Write-Output 'But.. $Age cannot be a string!'
+}
+elseif ($Age -lt 12 -and $Age -gt 0) {
+	Write-Output 'Child (Less than 12. Greater than 0)'
+}
+else {
+	Write-Output 'Adult'
 }
 
 # Switch statements are more powerful compared to most languages
@@ -126,25 +137,26 @@ switch($val) {
   default                 { "Others" }
 }
 
-# The classic for
-for($i = 1; $i -le 10; $i++) {
+# The classic for-loop
+for ($i = 1; $i -le 10; $i++) {
   "Loop number $i"
 }
 # Or shorter
 1..10 | % { "Loop number $_" }
 
 # PowerShell also offers
-foreach ($var in 'val1','val2','val3') { echo $var }
+foreach ($var in 'val1','val2','val3') { Write-Output $var }
 # while () {}
 # do {} while ()
 # do {} until ()
 
 # Exception handling
 try {} catch {} finally {}
-try {} catch [System.NullReferenceException] {
-	echo $_.Exception | Format-List -Force
-}
 
+try {}
+catch [System.NullReferenceException] {
+	Write-Output $_.Exception | Format-List -Force
+}
 
 ### Providers
 # List files and directories in the current directory
@@ -199,7 +211,7 @@ ps | Format-Table ID,Name,@{n='VM(MB)';e={'{0:n2}' -f ($_.VM / 1MB)}} -autoSize
 ### Functions
 # The [string] attribute is optional.
 function foo([string]$name) {
-	echo "Hey $name, have a function"
+	Write-Output "Hey $name, have a function"
 }
 
 # Calling your function
@@ -225,11 +237,12 @@ function New-Website() {
 		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]
 		[Alias('name')]
 		[string]$siteName,
+		
 		[ValidateSet(3000,5000,8000)]
 		[int]$port = 3000
 	)
 	BEGIN { Write-Verbose 'Creating new website(s)' }
-	PROCESS { echo "name: $siteName, port: $port" }
+	PROCESS { Write-Output "name: $siteName, port: $port" }
 	END { Write-Verbose 'Website(s) created' }
 }
 
@@ -258,7 +271,7 @@ $writer.Dispose()
 ### IO
 # Reading a value from input:
 $Name = Read-Host "What's your name?"
-echo "Hello, $Name!"
+Write-Output "Hello, $Name!"
 [int]$Age = Read-Host "What's your age?"
 
 # Test-Path, Split-Path, Join-Path, Resolve-Path
